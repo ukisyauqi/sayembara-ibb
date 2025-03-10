@@ -17,8 +17,8 @@ initSearchEngine().catch((error : any) => {
 
 const app = new Hono().basePath("/api");
 
-app.get("/", (c) => {
-  const startTime = Date.now();
+app.get("/", async (c): Promise<Response> => {
+  const startTime = performance.now();
 
   if (!isSearchReady()) {
     return c.json({ error: "Search service is initializing" }, 503);
@@ -43,7 +43,7 @@ app.get("/", (c) => {
       data: results,
       meta: {
         query,
-        response_time_ms: Number((Date.now() - startTime).toFixed(3)),
+        response_time_ms: Number((performance.now() - startTime).toFixed(3)),
       },
     });
   } catch (error) {
