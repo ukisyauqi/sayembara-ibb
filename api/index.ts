@@ -3,52 +3,52 @@ import { handle } from "hono/vercel";
 import {
   initSearchEngine,
   fuzzySearch,
+  isSearchReady,
 } from "../src/services/search";
+import { DEFAULT_LIMIT } from "../constant";
 
 export const config = {
   runtime: "edge",
 };
 
-// Initialize search engine when app starts
-initSearchEngine().catch((error: any) => {
+initSearchEngine().catch((error : any) => {
   console.error("Failed to initialize search engine:", error);
 });
 
 const app = new Hono().basePath("/api");
 
 app.get("/", (c) => {
-  return c.json({ message: "Hello Hono!" });
-});
+  const startTime = Date.now();
 
-// Add fuzzy search endpoint
-app.get("/search", (c) => {
-  const startTime = performance.now();
+  if (!isSearchReady()) {
+    return c.json({ error: "Search service is initializing" }, 503);
+  }
+
   const query = c.req.query("q");
+  const limit = c.req.query("limit");
+
   if (!query) {
     return c.json({ error: 'Missing search query parameter "q"' }, 400);
   }
 
-  try {
-    const results = fuzzySearch(query);
-    const responseTime = performance.now() - startTime;
+  const limitNumber = limit
+    ? typeof Number(limit) === "number"
+      ? Number(limit)
+      : DEFAULT_LIMIT
+    : DEFAULT_LIMIT;
 
+  try {
+    const results = fuzzySearch(query, limitNumber);
     return c.json({
       data: results,
       meta: {
         query,
-        response_time_ms: Number(responseTime.toFixed(3)),
+        response_time_ms: Number((Date.now() - startTime).toFixed(3)),
       },
     });
   } catch (error) {
-    const responseTime = performance.now() - startTime;
     console.error("Search failed:", error);
-    return c.json(
-      {
-        error: "Search failed",
-        meta: { response_time_ms: Number(responseTime.toFixed(3)) },
-      },
-      500
-    );
+    return c.json({ error: "Search failed" }, 500);
   }
 });
 

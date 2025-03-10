@@ -5,6 +5,7 @@
     "deploy": "vercel"
   },
   "dependencies": {
+    "@vercel/edge-config": "^1.4.0",
     "fuse.js": "^7.1.0",
     "hono": "^4.7.4"
   },

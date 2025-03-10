@@ -1,4 +1,5 @@
 import Fuse from "fuse.js";
+import { THRESHOLD } from "../../constant";
 
 interface Location {
   id: number;
@@ -9,25 +10,30 @@ interface Location {
 
 let fuseInstance: Fuse<Location> | null = null;
 
-const LIMIT = 10;
-const THRESHOLD = 0.2;
-
 export async function initSearchEngine() {
-  const locations = await loadLocationsFromDB();
-  fuseInstance = new Fuse(locations, {
-    keys: ["district_name", "city_name", "province_name"],
-    threshold: THRESHOLD,
-    isCaseSensitive: false,
-  });
+  try {
+    const locations = await loadLocationsFromDB();
+    fuseInstance = new Fuse(locations, {
+      keys: ["district_name", "city_name", "province_name"],
+      threshold: THRESHOLD,
+      isCaseSensitive: false,
+      shouldSort: true,
+      minMatchCharLength: 2,
+      includeScore: true,
+    });
+    console.log("Search engine initialized successfully");
+  } catch (error) {
+    console.error("Search engine initialization failed:", error);
+    throw error;
+  }
 }
 
-export function fuzzySearch(query: string): Location[] {
+export function fuzzySearch(query: string, limit: number): Location[] {
   if (!fuseInstance) throw new Error("Search engine not initialized");
 
   return fuseInstance
     .search(query)
-    .sort((a, b) => (a.score || 0) - (b.score || 0))
-    .slice(0, LIMIT)
+    .slice(0, limit)
     .map((result) => {
       return {
         ...result.item,
@@ -36,7 +42,16 @@ export function fuzzySearch(query: string): Location[] {
     });
 }
 
+export function isSearchReady() {
+  return !!fuseInstance;
+}
+
 async function loadLocationsFromDB(): Promise<Location[]> {
-  const locationsData = require("../../data/location.json");
-  return locationsData;
+  try {
+    const locationsData = require("../../data/location.json");
+    return locationsData;
+  } catch (error) {
+    console.error("Failed to load locations:", error);
+    throw error;
+  }
 }
