@@ -1,5 +1,15 @@
 # Location Search API
 
+## About
+
+It's built with:
+
+- [Hono](https://hono.dev/) for the web framework
+- [Fuse.js](https://fusejs.io/) for fuzzy search
+- Vercel Edge Functions for deployment
+
+The API is currently hosted at: [https://sayembara-ibb.vercel.app/](https://sayembara-ibb.vercel.app/)
+
 ## Installation
 ```
 
