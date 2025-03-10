@@ -18,7 +18,6 @@ export async function initSearchEngine() {
     keys: ["district_name", "city_name", "province_name"],
     threshold: THRESHOLD,
     isCaseSensitive: false,
-    includeScore: true,
   });
 }
 
@@ -35,10 +34,6 @@ export function fuzzySearch(query: string): Location[] {
         score: result.score?.toFixed(5),
       };
     });
-}
-
-export function isSearchReady() {
-  return !!fuseInstance;
 }
 
 async function loadLocationsFromDB(): Promise<Location[]> {

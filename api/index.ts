@@ -1,6 +1,9 @@
 import { Hono } from "hono";
 import { handle } from "hono/vercel";
-import { initSearchEngine, fuzzySearch, isSearchReady } from "../src/services/search.service";
+import {
+  initSearchEngine,
+  fuzzySearch,
+} from "../src/services/search";
 
 export const config = {
   runtime: "edge",
@@ -19,10 +22,7 @@ app.get("/", (c) => {
 
 // Add fuzzy search endpoint
 app.get("/search", (c) => {
-  if (!isSearchReady()) {
-    return c.json({ error: "Search service is initializing" }, 503);
-  }
-
+  const startTime = performance.now();
   const query = c.req.query("q");
   if (!query) {
     return c.json({ error: 'Missing search query parameter "q"' }, 400);
@@ -30,10 +30,25 @@ app.get("/search", (c) => {
 
   try {
     const results = fuzzySearch(query);
-    return c.json(results);
+    const responseTime = performance.now() - startTime;
+
+    return c.json({
+      data: results,
+      meta: {
+        query,
+        response_time_ms: Number(responseTime.toFixed(3)),
+      },
+    });
   } catch (error) {
+    const responseTime = performance.now() - startTime;
     console.error("Search failed:", error);
-    return c.json({ error: "Search failed" }, 500);
+    return c.json(
+      {
+        error: "Search failed",
+        meta: { response_time_ms: Number(responseTime.toFixed(3)) },
+      },
+      500
+    );
   }
 });
 
